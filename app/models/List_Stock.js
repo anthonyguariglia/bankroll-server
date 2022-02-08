@@ -1,15 +1,14 @@
 module.exports = (sequelize, Sequelize) => {
-  const User = sequelize.define("users", {
-    username: {
+  const List_Stock = sequelize.define('listsAndStocks', {
+    listId: {
       type: Sequelize.STRING
     },
-    email: {
+    stockId: {
       type: Sequelize.STRING
     },
-    password: {
+    ticker: {
       type: Sequelize.STRING
     }
   })
-  
-  return User
+  return List_Stock
 }

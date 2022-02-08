@@ -25,6 +25,7 @@ const db = {
   user: require('./user-model')(sequelize, Sequelize),
   list: require('./list')(sequelize, Sequelize),
   stock: require('./stock')(sequelize, Sequelize),
+  list_stock: require('./List_Stock')(sequelize, Sequelize)
 }
 
 module.exports = db

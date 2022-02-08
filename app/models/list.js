@@ -11,6 +11,5 @@ module.exports = (sequelize, Sequelize) => {
       type: Sequelize.STRING
     }
   })
-  // List.belongsTo(User, { as: 'lists' })
   return List
 }
