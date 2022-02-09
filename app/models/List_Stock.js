@@ -1,5 +1,8 @@
 module.exports = (sequelize, Sequelize) => {
   const List_Stock = sequelize.define('listsAndStocks', {
+    userId: {
+      type: Sequelize.STRING
+    },
     listId: {
       type: Sequelize.STRING
     },

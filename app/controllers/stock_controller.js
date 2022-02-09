@@ -1,37 +1,79 @@
+const res = require('express/lib/response')
 const db = require('../models')
+const stock = require('../models/stock')
 const User = db.user
 const List = db.list
 const Stock = db.stock
 const List_Stock = db.list_stock
 
-// List Operationns
-exports.createList = (req, res, next) => {
-  List.create({
-    name: req.body.name,
-    userId: req.user.id
-  }).then(() => {
-    List.belongsTo(User)
-    List.findAll({
-      include: [{
-        model: User,
-        required: true
-      }]
-    }).then(list => {
-      if (list) {
-        res.status(201).json({ lists: list })
-      }
-    })
-    
+/* User Operations */
+
+// Get User Data
+exports.getuser = (req, res, next) => {
+  User.belongsToMany(List, { through: 'listsAndStocks'})
+  User.belongsToMany(Stock, { through: 'listsAndStocks'})
+  User.findOne({
+    where: {
+      id: req.user.id
+    },
+    include: {
+      model: List,
+      required: true,
+      many: true
+    }
+  }).then(user => {
+    if (!user) {
+      return res.status(404).json('User not found')
+    }
+
+    return res.status(200).json({ user: user })
   })
-  console.log(req.headers['x-access-token'], req.user.id)
-  
-  console.log(User)
+}
+
+/* List Operations */
+
+// Create list
+exports.createList = (req, res, next) => {
+  List.findOne({
+    where: {
+      userId: req.user.id,
+      name: req.body.name
+    },
+  }).then(list => {
+    if (list) {
+      return res.status(400).json('List already exists')
+    }
+
+    List.create({
+      name: req.body.name,
+      userId: req.user.id
+    }).then(() => {
+      List.belongsTo(User, { through: 'listsAndStocks'})
+      List.findAll({
+        where: {
+          userId: req.user.id
+        },
+        include: [{
+          model: User,
+          required: true
+        }]
+      }).then(list => {
+        if (list) {
+          return res.status(201).json({ lists: list })
+        }
+      })
+      
+    })
+  })
 }
 
 // show all lists
 exports.indexLists = (req, res, next) => {
   List.belongsToMany(Stock, { through: 'listsAndStocks' })
   List.findAll({
+    where: {
+      userId: req.user.id
+    },
     include: {
       model: Stock
     }
@@ -45,7 +87,7 @@ exports.indexLists = (req, res, next) => {
 
 // find one list
 exports.showList = (req, res, next) => {
-  List.belongsToMany(Stock, { through: 'listAndStocks' })
+  List.belongsToMany(Stock, { through: 'listsAndStocks' })
   List.findOne({
     where: {
       name: req.params.name
@@ -56,7 +98,7 @@ exports.showList = (req, res, next) => {
     }]
   }).then(list => {
     if (!list) {
-      res.status(400).json('List not found')
+      res.status(404).json('List not found')
     }
     res.status(200).json({ list: list })
   })
@@ -66,14 +108,21 @@ exports.showList = (req, res, next) => {
 exports.deleteList = (req, res, next) => {
   List.destroy({
     where: {
-      id: req.params.id
+      id: req.params.id,
+      userId: req.user.id
     }
   }).then(list => {
-    res.status(203).json({ list: list })
+    if (!list) {
+      return res.status(404).json('List not found')
+    }
+
+    return res.status(203).json({ Removed: list })
   })
 }
 
-// Stock Operations
+/* Stock Operations */
+
+// Create Stock
 exports.createStock = (req, res, next) => {
   // look for stock in stock table
   Stock.findOne({
@@ -86,15 +135,17 @@ exports.createStock = (req, res, next) => {
       List_Stock.findOne({
         where: {
           listId: req.body.listId,
-          ticker: req.body.ticker
+          ticker: req.body.ticker,
+          userId: req.user.id
         }
       }).then(listStock => {
         // if it exists, return
         if (listStock) {
           return res.status(400).json('Stock already exists')
         }
-        // if the stock exists but not in this specific list, add a new relationship
+        // if the stock exists but not in this specific list for this specific user, add a new relationship
         List_Stock.create({
+          userId: req.user.id,
           stockId: stock.id,
           listId: req.body.listId,
           ticker: stock.ticker
@@ -106,16 +157,22 @@ exports.createStock = (req, res, next) => {
       // if the stock doesn't exist yet, find the list it's looking for
       List.findOne({
         where: {
-          id: req.body.listId
+          id: req.body.listId,
+          userId: req.user.id
         }
       }).then(list => {
+        if (!list) {
+          return res.status(404).json('List does not exist')
+        }
+
         // create the stock with just a name and ticker
         Stock.create({
           name: req.body.name,
           ticker: req.body.ticker
         }).then(stock => {
-          // declare the many to many relationship
+          // declare the many to many relationship to a given list
           Stock.belongsToMany(List, { through: 'listsAndStocks' })
+          Stock.belongsToMany(User, { through: 'listsAndStocks' })
           Stock.findOne({
             where: {
               id: stock.id
@@ -126,6 +183,7 @@ exports.createStock = (req, res, next) => {
           }).then(stock => {
             // now create the listsAndStocks relationship with this stock/list combo
             List_Stock.create({
+              userId: req.user.id,
               stockId: stock.id,
               listId: list.id,
               ticker: stock.ticker
@@ -140,33 +198,54 @@ exports.createStock = (req, res, next) => {
   })
 }
 
-// select * from users join lists on users.id = lists.userId;
-// SELECT `stocks`.`id`, `stocks`.`name`, `stocks`.`ticker`, `stocks`.`listId`, `stocks`.`createdAt`, `stocks`.`updatedAt`, 
+// index all stocks
+exports.indexStocks = (req, res, next) => {
+  Stock.belongsToMany(List, { through: 'listsAndStocks' })
+  Stock.belongsToMany(User, { through: 'listsAndStocks' })
+  Stock.findAll({
+    include: {
+      model: List
+    }
+  }).then(stocks => {
+    if (!stocks) {
+      return res.status(404).json('No stocks found!')
+    }
 
-// `lists`.`id` AS `lists.id`, 
-// `lists`.`name` AS `lists.name`, 
-// `lists`.`userId` AS `lists.userId`, 
-// `lists`.`createdAt` AS `lists.createdAt`, 
-// `lists`.`updatedAt` AS `lists.updatedAt`, 
-// `lists->listsAndStocks`.`createdAt` AS `lists.listsAndStocks.createdAt`, `lists->listsAndStocks`.`updatedAt` AS `lists.listsAndStocks.updatedAt`, `lists->listsAndStocks`.`listId` AS `lists.listsAndStocks.listId` 
+    return res.status(200).json({ stocks: stocks })
+  })
+}
 
-// FROM `stocks` 
-// AS `stocks` 
+// remove stock from list
+exports.removeStock = (req, res, next) => {
+  List_Stock.destroy({
+    where: {
+      listId: req.body.listId,
+      userId: req.body.userId,
+      stockId: req.body.stockId
+    }
+  }).then(listStock => {
+    if (!listStock) {
+      return res.status(404).json('Stock not found')
+    }
 
-// INNER JOIN ( `listsAndStocks` AS `lists->listsAndStocks` INNER JOIN `lists` AS `lists` ON `lists`.`id` = `lists->listsAndStocks`.`listId`) 
-// ON `stocks`.`id` = `lists->listsAndStocks`.`listId`;
+    return res.status(203).json({ Removed: listStock })
+  })
 
-// SELECT `stocks`.`id`, `stocks`.`name`, `stocks`.`ticker`, `stocks`.`listId`, `stocks`.`createdAt`, `stocks`.`updatedAt`, 
-// `lists`.`id` AS `lists.id`, 
-// `lists`.`name` AS `lists.name`, 
-// `lists`.`userId` AS `lists.userId`, 
-// `lists`.`createdAt` AS `lists.createdAt`, 
-// `lists`.`updatedAt` AS `lists.updatedAt`, 
-// `lists->listsAndStocks`.`createdAt` AS `lists.listsAndStocks.createdAt`, `lists->listsAndStocks`.`updatedAt` AS `lists.listsAndStocks.updatedAt`, `lists->listsAndStocks`.`stockId` AS `lists.listsAndStocks.stockId`, 
-// `lists->listsAndStocks`.`listId` AS `lists.listsAndStocks.listId` 
+}
 
-// FROM `stocks` 
-// AS `stocks` 
-// INNER JOIN ( `listsAndStocks` AS `lists->listsAndStocks` INNER JOIN `lists` AS `lists` ON `lists`.`id` = `lists->listsAndStocks`.`listId`) 
+/* List and Stock Operations */
 
-// ON `stocks`.`id` = `lists->listsAndStocks`.`stockId`;
+// Pull list and stock data for current user
+exports.getListAndStock = (req, res, next) => {
+  List_Stock.findAll({
+    where: {
+      userId: req.user.id
+    }
+  }).then(data => {
+    if (!data) {
+      return res.status(404).json('No data found!')
+    }
+
+    return res.status(200).json({ data })
+  })
+}
