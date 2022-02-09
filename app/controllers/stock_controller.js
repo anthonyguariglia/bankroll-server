@@ -220,7 +220,7 @@ exports.removeStock = (req, res, next) => {
   List_Stock.destroy({
     where: {
       listId: req.body.listId,
-      userId: req.body.userId,
+      userId: req.user.id,
       stockId: req.body.stockId
     }
   }).then(listStock => {
