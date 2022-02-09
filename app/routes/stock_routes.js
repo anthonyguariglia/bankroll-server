@@ -29,7 +29,7 @@ router.get('/lists/:name', showList)
 // stock routes
 router.post('/stocks', createStock)
 router.get('/stocks', indexStocks)
-router.delete('/stocks', removeStock)
+router.patch('/stocks', removeStock)
 
 // list and stock routes
 router.get('/lists-stocks', getListAndStock)
