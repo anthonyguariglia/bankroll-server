@@ -22,7 +22,7 @@ router.get('/', getuser)
 
 // list routes
 router.post('/lists', createList)
-router.delete('/lists/:id', deleteList)
+router.delete('/lists/:name', deleteList)
 router.get('/lists', indexLists)
 router.get('/lists/:name', showList)
 
