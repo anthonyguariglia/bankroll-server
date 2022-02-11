@@ -7,6 +7,9 @@ const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
 
 exports.signup = (req, res) => {
+  if (req.body.password !== req.body.password_confirmation) {
+    return res.status(400).json('Passwords do not match')
+  }
   User.create({
     username: req.body.username,
     email: req.body.email,
@@ -76,5 +79,18 @@ exports.changepassword = (req, res) => {
     user.save()
 
     return res.status(200).send({ message: 'Password Successfully Changed'})
+  })
+}
+
+exports.signout = (req, res) => {
+  User.findOne({ 
+    where: {
+      id: req.user.id
+    }
+  }).then(user => {
+    if (!user) {
+      return res.status(404).json('User not found')
+    }
+    return res.status(200).json('Successfully signed out')
   })
 }

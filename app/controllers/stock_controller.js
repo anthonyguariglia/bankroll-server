@@ -23,7 +23,7 @@ exports.getuser = (req, res, next) => {
     }
   }).then(user => {
     if (!user) {
-      return res.status(404).json('User not found')
+      return res.json('User not found').status(404)
     }
 
     return res.status(200).json({ user: user })
@@ -41,7 +41,7 @@ exports.createList = (req, res, next) => {
     },
   }).then(list => {
     if (list) {
-      return res.status(400).json('List already exists')
+      return res.json('List already exists').status(400)
     }
 
     List.create({
@@ -79,7 +79,7 @@ exports.indexLists = (req, res, next) => {
     }
   }).then(lists => {
     if (!lists) {
-      res.status(400).json('No lists found')
+      res.json('No lists found').status(400)
     }
     res.status(200).json({ lists: lists })
   })
@@ -98,7 +98,7 @@ exports.showList = (req, res, next) => {
     }]
   }).then(list => {
     if (!list) {
-      res.status(404).json('List not found')
+      res.json('List not found').status(404)
     }
     res.status(200).json({ list: list })
   })
@@ -113,7 +113,7 @@ exports.deleteList = (req, res, next) => {
     }
   }).then(list => {
     if (!list) {
-      return res.status(404).json('List not found')
+      return res.json('List not found').status(404)
     }
 
     return res.status(203).json({ Removed: list })
@@ -133,7 +133,7 @@ exports.createStock = (req, res, next) => {
   }).then(list => {
     // if list does not exist for this user, return
     if (!list) {
-      return res.status(404).json('List does not exist')
+      return res.json('List does not exist').status(404)
     }
     // look for stock in stock table
     Stock.findOne({
@@ -152,7 +152,7 @@ exports.createStock = (req, res, next) => {
         }).then(listStock => {
           // if it exists, return
           if (listStock) {
-            return res.status(400).json('Stock already exists')
+            return res.json('Stock is already in list').status(406)
           }
           // if the stock exists but not in this specific list for this specific user, add a new relationship
           List_Stock.create({
@@ -173,7 +173,7 @@ exports.createStock = (req, res, next) => {
           }
         }).then(list => {
           if (!list) {
-            return res.status(404).json('List does not exist')
+            return res.json('List does not exist').status(404)
           }
 
           // create the stock with just a name and ticker
@@ -220,7 +220,7 @@ exports.indexStocks = (req, res, next) => {
     }
   }).then(stocks => {
     if (!stocks) {
-      return res.status(404).json('No stocks found!')
+      return res.json('No stocks found!').status(404)
     }
 
     return res.status(200).json({ stocks: stocks })
@@ -237,7 +237,7 @@ exports.removeStock = (req, res, next) => {
     }
   }).then(listStock => {
     if (!listStock) {
-      return res.status(404).json('Stock not found')
+      return res.json('Stock not found').status(404)
     }
 
     return res.status(203).json({ Removed: listStock })
@@ -255,7 +255,7 @@ exports.getListAndStock = (req, res, next) => {
     }
   }).then(data => {
     if (!data) {
-      return res.status(404).json('No data found!')
+      return res.json('No data found!').status(404)
     }
 
     return res.status(200).json({ data })
