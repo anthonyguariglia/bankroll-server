@@ -8,8 +8,19 @@ const bcrypt = require('bcrypt')
 
 exports.signup = (req, res) => {
   if (req.body.password !== req.body.password_confirmation) {
-    return res.status(400).json('Passwords do not match')
+    return res.status(405).json('Passwords do not match')
   }
+  User.findOne({
+    where: {
+      username: req.body.username
+    }
+  }).then(user => {
+    console.log(user)
+    if (user) {
+      console.log(user)
+      return res.status(403).json('User already exists')
+    }
+  })
   User.create({
     username: req.body.username,
     email: req.body.email,
