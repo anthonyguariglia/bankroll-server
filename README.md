@@ -42,3 +42,5 @@ The majority of the future work will be dictated by front-end additions. As it s
 API: https://fathomless-wave-79069.herokuapp.com
 
 Deployed Site: https://anthonyguariglia.github.io/bankroll
+
+Front-End Repository: https://github.com/anthonyguariglia/bankroll
