@@ -35,6 +35,18 @@ Once the foundation was set up, the requirements of the back end were determined
 
 The many-to-many relationship of lists to stocks (a list can have many stocks, a stock can belong to many lists) requires the use of a join table that connects the user that owns the list, to the list, to the stocks in that list. The advantage of this table is that a stock only needs to be added to the database once, and from there, each time it is added to another list a row is simply added to the join table. This supports scalability and efficiency as use increases.
 
+### API Endpoints
+List routes
+- POST /lists - create a list. Body must include 'name' of list
+- DELETE /lists/:name - delete a list. Name must be included as URL parameter
+- GET /lists - show all lists
+- GET /lists/:name - show a specific list. Name must be included as a URL parameter
+
+Stock routes
+- POST '/stocks' - create a stock. Body must include 'name' of stock, 'ticker' of stock, and 'listId' of the list it will be added to
+- GET /stocks - show all stocks
+- PATCH /stocks - remove a stock from a list. Body must include 'stockId' of stock to be removed from list and 'listId' of list to remove stock from
+
 ## Future Work
 The majority of the future work will be dictated by front-end additions. As it stands now, this back end server is set up to support high volume of use in an organized manner. As users are added and more stocks are added to the database, the current setup will allow for efficient retrieval of information.
 
